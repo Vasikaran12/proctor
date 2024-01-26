@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
 import 'package:proctor/models/faculty.dart';
-import 'package:proctor/models/user.dart';
+import 'package:proctor/models/student.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/constants/auth_constants.dart';
 import 'package:provider/provider.dart';
@@ -19,40 +19,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool isloading = false;
 
-  Future<List<Faculty>> getProctorNames() async {
-     List<Faculty> l = [];
-     try{
-     Response res = await get(Uri.parse('$url/faculties'));
-     if(res.statusCode == 200){
-        List lt = jsonDecode(res.body);
-        for(int i=0; i<lt.length; i++){
-          l.add(Faculty.fromMap(lt[i]));
-        }
-     }else if(res.statusCode == 500){
-            
-     }
-     else{
-        SnackBarGlobal.show("Error occured while fetching proctor names");
-     }
-     }catch(e){
-      debugPrint(e.toString());
-     }
-     return l;
-  }
-
-  Future<Map> checkUser(String email, String name) async {
-     Map l = {};
-     try{
-      Response res = await get(Uri.parse('$url/checkUser?email=$email&&name=$name'));
-      if(res.statusCode == 200){
-        l =  jsonDecode(res.body);
-      }else{
-          SnackBarGlobal.show("Error occured while validating student");
-      }
-     }catch(e){
-      debugPrint(e.toString());
-     }
-     return l;
+  @override
+  void initState(){
+    super.initState();
   }
 
   @override
@@ -81,36 +50,60 @@ class _LoginPageState extends State<LoginPage> {
                     });
                     var user = await google.signIn();
                     if(user != null){
-                      if(user.email.contains("student.tce.edu")){
-                        
-                        setState(() {
-                      isloading  = false;
-                    });
-                        Map map = await checkUser(user.email, user.displayName ?? "");
-                        if(map.isNotEmpty){
-                          Faculty faculty = Faculty.fromJson(map['faculty']);
-                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(faculty);  
-                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setRegNum(map['regnum']);  
-                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addUser(User(id: user.id, name: user.displayName ?? "", email: user.email, phone: map['phone']));
-                        }else{
-                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addUser(User(id: user.id, name: user.displayName ?? "", email: user.email, phone: ""));
-                        }
-                      }else if(!user.email.contains("student.tce.edu") && user.email.contains("6131")){
-                        List<Faculty> l = await getProctorNames();
-                        for(int i = 0; i<l.length; i++){
-                            if(l[i].email == 'kiit@tce.edu'){
-                            //'''l[i].name'''){
-                              
-                              setState(() {
-                                isloading  = false;
-                              });
-                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setFaculty();
-                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addUser(User(id: user.id, name: l[i].name, email: user.email, phone: ""));
-                        break;
+                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com")){
+                        if(user.email.contains("student.tce.edu")){
+                          try{
+                            Response res = await get(Uri.parse('$url/checkStudent?email=${user.email}'));
+                            if(res.statusCode == 200){
+                              debugPrint(jsonDecode(res.body));
+                              Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addStudent(Student.fromMap(jsonDecode(res.body)));
+                            }else if(res.statusCode == 400){
+                              debugPrint("Success");
+                              Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addStudent(Student(name: user.displayName ?? "", email: user.email, phone: "", regnum: "", faculty: Faculty(name: "", email: "", phone: "")));
+                            }else{
+                              SnackBarGlobal.show("Error occured while validating student");
                             }
-                        }
-                      }
-                      else{
+                          }catch(e){
+                            debugPrint(e.toString());
+                          }
+                        }else{
+                          List<Faculty> faculties = [];
+                          try{
+                            Response res = await get(Uri.parse('$url/faculties'));
+                            if(res.statusCode == 200){
+                                List lt = jsonDecode(res.body);
+                                for(int i=0; i<lt.length; i++){
+                                  faculties.add(Faculty.fromMap(lt[i]));
+                                }
+                            }else{
+                                SnackBarGlobal.show("Error occured while fetching proctor names");
+                            }
+                          }catch(e){
+                            debugPrint(e.toString());
+                          }
+                          for(int i = 0; i<faculties.length; i++){
+                            debugPrint(faculties[i].email);
+                            if(user.email == faculties[i].email){
+                              debugPrint("Success 1212");
+                              Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setFaculty();
+                              try{
+                                Response res = await get(Uri.parse('$url/checkFaculty?email=${user.email}'));
+                                if(res.statusCode == 200){
+                                  Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty.fromJson(res.body));
+                                }else if(res.statusCode == 400){
+                                  debugPrint("Success");
+                                  Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty(name: user.displayName ?? "", email: user.email, phone: "",));
+                                }else{
+                                  SnackBarGlobal.show("Error occured while validating student");
+                                }
+                              }catch(e){
+                                debugPrint(e.toString());
+                              }
+                              break;
+                            }
+                          }
+                        }                      
+                      }else{
                         SnackBarGlobal.show("Please continue with your college E-Mail ID");
                         await google.signOut();
                       }

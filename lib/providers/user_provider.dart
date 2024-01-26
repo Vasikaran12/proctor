@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:proctor/models/faculty.dart';
-import 'package:proctor/models/user.dart';
+import 'package:proctor/models/student.dart';
 
 class UserProvider extends ChangeNotifier{
-  User _user = User(id: "", name: "", email: "", phone: "");
   Faculty _faculty = Faculty(name: "", email: "", phone: "");
-  
+  Student _student = Student(name: "", email: "", phone: "", regnum: "", faculty: Faculty(name: "", email: "", phone: ""));
+
   bool _isFaculty = false;
-  String _regNum = "";
   
-  User get user => _user;
+  Student get student => _student;
   bool get isFaculty => _isFaculty;
-  String get regNum => _regNum;
   Faculty get faculty => _faculty;
 
-  void addUser(User user){
-    _user = user;
+  void addStudent(Student user){
+    _student = user;
     notifyListeners();
   }
 
@@ -24,16 +22,10 @@ class UserProvider extends ChangeNotifier{
     notifyListeners();
   }
 
-  void removeUser(){
-    _user = User(id: "", name: "", email: "", phone: ""); 
+  void removeStudent(){
+    _student = Student(name: "", email: "", phone: "", regnum: "", faculty: _faculty); 
     _faculty = Faculty(name: "", email: "", phone: "");
     _isFaculty = false;
-    _regNum = "";
-    notifyListeners();
-  }
-
-  void setRegNum(String regNum){
-    _regNum = regNum;
     notifyListeners();
   }
 

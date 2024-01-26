@@ -3,6 +3,7 @@ import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/constants/auth_constants.dart';
+import 'package:proctor/widgets/card.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -31,12 +32,16 @@ class _HomePageState extends State<HomePage> {
             setState(() {
               isloading  = false;
             });
-            Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).removeUser();
+            Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).removeStudent();
           }, icon: const Icon(Icons.login_rounded))
         ],
       ),
       body: Center(
-        child: Text(Provider.of<UserProvider>(context).user.name)
+        child: IdCard(name: Provider.of<UserProvider>(context).student.name, 
+        regnum: Provider.of<UserProvider>(context).student.regnum, 
+        pname: Provider.of<UserProvider>(context).student.faculty.name, 
+        pphone: Provider.of<UserProvider>(context).student.faculty.phone, 
+        pemail: Provider.of<UserProvider>(context).student.faculty.email)
       ),
     );
   }

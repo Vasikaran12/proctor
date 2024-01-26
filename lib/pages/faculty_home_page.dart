@@ -31,12 +31,12 @@ class _FacultyPageState extends State<FacultyPage> {
             setState(() {
               isloading  = false;
             });
-            Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).removeUser();
+            Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).removeStudent();
           }, icon: const Icon(Icons.login_rounded))
         ],
       ),
       body: Center(
-        child: Text(Provider.of<UserProvider>(context).user.name)
+        child: Text(Provider.of<UserProvider>(context).faculty.name)
       ),
     );
   }

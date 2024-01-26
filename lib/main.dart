@@ -1,31 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/constants/color.dart';
-import 'package:proctor/models/user.dart';
 import 'package:proctor/pages/splash_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigationKey = GlobalKey<NavigatorState>();
 
-void main() async {
-  GoogleSignInAccount? user = google.currentUser;
-  if(user != null){
-    debugPrint("User: ${user.email}");
-    Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addUser(User(id: user.id, name: user.displayName ?? "", email: user.email, phone: ""));
-  }else{
-    debugPrint("No user");
-  }
+void main() {
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (_) => UserProvider()),
   ], child: const MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
