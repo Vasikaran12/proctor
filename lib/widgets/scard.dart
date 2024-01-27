@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
+import 'package:proctor/providers/user_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SIdCard extends StatefulWidget {
@@ -11,7 +17,8 @@ class SIdCard extends StatefulWidget {
   final String pname;
   final String pphone;
   final String pemail;
-  const SIdCard({super.key, required this.name, required this.regnum, required this.pname, required this.pphone, required this.pemail, required this.email, required this.phone});
+  final bool showProctor;
+  const SIdCard({super.key, required this.name, required this.regnum, required this.pname, required this.pphone, required this.pemail, required this.email, required this.phone, required this.showProctor});
 
   @override
   State<SIdCard> createState() => _SIdCardState();
@@ -19,6 +26,8 @@ class SIdCard extends StatefulWidget {
 
 class _SIdCardState extends State<SIdCard> {
   final _smsgController = TextEditingController(); 
+  final _fmsgController = TextEditingController(); 
+  bool issendingS = false;
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +166,7 @@ class _SIdCardState extends State<SIdCard> {
   ),
   keyboardType: TextInputType.emailAddress,
   controller: _smsgController,
+  readOnly: issendingS,
   cursorColor: Colors.white,
   decoration: const InputDecoration(
     
@@ -183,12 +193,45 @@ class _SIdCardState extends State<SIdCard> {
 ),
 
                                     ),
-                          InkWell(
+                          issendingS
+                          ? const CircularProgressIndicator()
+                          : InkWell(
                           onTap: () async {
-                            setState(() {
+                            if(_smsgController.text.isNotEmpty){
+                              setState(() {
+                                issendingS = true;
+                              });
+                              Map data = {
+                                'sname': Provider.of<UserProvider>(context, listen: false).faculty.name,
+                                'semail': Provider.of<UserProvider>(context, listen: false).faculty.email,
+                                'remail': widget.email,
+                                'message': _smsgController.text
+                              };
+                              try{
+                              Response res = await post(Uri.parse('$url/sendmessage'), 
+                                  headers: <String, String>{
+                                    'Content-Type': 'application/json; charset=UTF-8',
+                                  },
+                                  body: jsonEncode(data));
+                                  debugPrint("hello1");
+                                  if(res.statusCode == 200){
+                                      
+                              setState(() {
                               _smsgController.text = "";
                             });
                             SnackBarGlobal.show("Message sent");
+                                  }else{
+                                SnackBarGlobal.show("Error while sending message");
+                                  }
+                              
+                              }catch(e){
+                                debugPrint(e.toString());
+                                SnackBarGlobal.show("Error while sending message");
+                              }
+                              setState(() {
+                                issendingS = false;
+                              });
+                            }
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.1,
@@ -211,16 +254,22 @@ class _SIdCardState extends State<SIdCard> {
                     ),
                     /**/
                     
-                    Divider(
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : Divider(
                       thickness: 1.15,
                       indent: MediaQuery.of(context).size.width * 0.1,
                       endIndent: MediaQuery.of(context).size.width * 0.1,
                       color: Colors.grey.shade200,
                     ),
-                    const SizedBox(
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : const SizedBox(
                       height: 30,
                     ),
-                    Row(
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -240,10 +289,14 @@ class _SIdCardState extends State<SIdCard> {
                         ),
                       ],
                     ),
-                    const SizedBox(
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : const SizedBox(
                       height: 30,
                     ),
-                    Row(
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         InkWell(
@@ -279,7 +332,9 @@ class _SIdCardState extends State<SIdCard> {
                             ),
                           ),
                         ),
-                        SizedBox(
+                        !widget.showProctor
+                    ? const SizedBox()
+                    : SizedBox(
                           width: MediaQuery.of(context).size.width * 0.1,
                         ),
                         InkWell(
@@ -314,13 +369,100 @@ class _SIdCardState extends State<SIdCard> {
                       ],
                     ),
                   
-                    const SizedBox(
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : const SizedBox(
                       height: 30,
                     ),
-                    const SizedBox(
-                      height: 15,
-                    ),
                     
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        SizedBox(
+                                      width: MediaQuery.of(context).size.width / 1.5,
+                                      child: TextFormField(
+  maxLines: null,
+  style: const TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w500,
+    fontSize: 17,
+  
+  ),
+  keyboardType: TextInputType.emailAddress,
+  controller: _fmsgController,
+  cursorColor: Colors.white,
+  decoration: const InputDecoration(
+    
+    enabledBorder: OutlineInputBorder(
+      borderSide: BorderSide(
+        color: Colors.white, // Set your desired border color here
+      ),
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: BorderSide(
+        color: Colors.white, // Set your desired border color here
+      ),
+      borderRadius: BorderRadius.all(Radius.circular(20)),
+    ),
+    labelText: "Enter your message",
+    labelStyle: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w500,
+      fontSize: 20,
+    ),
+    
+  ),
+),
+
+                                    ),
+                          InkWell(
+                          onTap: () async {
+                            if(_fmsgController.text.isNotEmpty){
+                              Map data = {
+                                'sname': Provider.of<UserProvider>(context, listen: false).faculty.name,
+                                'semail': Provider.of<UserProvider>(context, listen: false).faculty.email,
+                                'remail': widget.pemail,
+                                'message': _fmsgController.text
+                              };
+                              Response res = await post(Uri.parse('$url/sendmessage'), 
+                                  headers: <String, String>{
+                                    'Content-Type': 'application/json; charset=UTF-8',
+                                  },
+                                  body: jsonEncode(data));
+                                  debugPrint("hello1");
+                                  if(res.statusCode == 200){
+
+                                  }
+                              setState(() {
+                              _fmsgController.text = "";
+                            });
+                            SnackBarGlobal.show("Message sent");
+                            }
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.1,
+                            height: MediaQuery.of(context).size.width * 0.1,
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.shade400,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                    !widget.showProctor
+                    ? const SizedBox()
+                    : const SizedBox(
+                      height: 30,
+                    ),
                   ],
                 ),
               ),

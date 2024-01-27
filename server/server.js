@@ -1,6 +1,7 @@
 const express = require('express')
 const {Pool} = require('pg');
 const cors = require('cors');
+const fcm = require("./services/push_notification");
 require('dotenv').config();
 
 const app = express();
@@ -14,9 +15,32 @@ const pool = new Pool({
   connectionString: process.env.DB_URL
 });
 
+app.get('/checkUser', (req, res) => {
+    try{
+    const email = req.query.email;
+    if(email.includes("victoriousvasikaran123@gmail.com")){
+        console.log("Admin");
+        res.sendStatus(201);
+    }else if(
+        email.includes("tce.edu") ||
+        email.includes("vasikaran6131@gmail.com") ||
+        email.includes("vineesha.v0102@gmail.com") ||
+        email.includes("testfaculty6@gmail.com")
+      ){
+        console.log("College User");
+        res.sendStatus(200);
+      }else{
+        res.sendStatus(400);
+      }
+    }catch(e){
+        console.log(e.message);
+        res.sendStatus(500);
+    }
+});
+
 app.get('/faculties', async (req, res) => {
     try{
-        await pool.query(`select * from faculty;`, (err, results) => {
+        await pool.query(`select * from faculty order by name;`, (err, results) => {
             if(err){
                 console.log(err.message);
             }else{
@@ -80,6 +104,109 @@ app.get('/checkFaculty',(req, res) => {
     }
 })
 
+app.get('/savetoken', async (req, res) => {
+    try{
+    const token = req.query.token;
+    const email = req.query.email;
+    console.log({token, email});
+    await pool.query(
+        `insert into session(email, token)
+         values($1, $2)`, [email, token], (err, results) => {
+            if(err){
+                console.log(err.message);
+                res.sendStatus(500);
+            }else{
+                console.log(results.rows + 'inserted');
+                res.sendStatus(200);
+            }
+         }
+    );
+       }catch(e){
+            console.log(e);
+            res.sendStatus(500);
+        }
+});
+
+app.get('/removetoken', async (req, res) => {
+    try{
+    const token = req.query.token;
+    console.log({token});
+    await pool.query(
+        `delete from session
+         where token = $1`, [token], (err, results) => {
+            if(err){
+                console.log(err.message);
+                res.sendStatus(500);
+            }else{
+                console.log(results.rows + 'deleted');
+                res.sendStatus(200);
+            }
+         }
+    );
+        }catch(e){
+            console.log(e);
+            res.sendStatus(500);
+        }
+});
+
+
+app.post('/sendmessage', async (req, res) => {
+    try{
+    const {sname, semail, remail, message} = req.body;
+    console.log({sname, semail, remail, message});
+    await pool.query(
+        `with ts as (insert into messages(sender, receiver, message)
+         values($1, $2, $3))
+         select token
+         from session 
+         where email = $4`, [semail, remail, message, remail], (err, results) => {
+            if(err){
+                console.log(err.message);
+                res.sendStatus(500);
+            }else{
+                console.log(results.rows);
+                if(results.rows.length > 0){
+                    var sender = fcm();
+                    for(let i = 0; i < results.rows.length; i++){    
+                            const send_message = {
+                                "message": {
+                                    "token": results.rows[i].token,
+                                    "notification": {
+                                        "body": message,
+                                        "title": `${sname}`,
+                                    },
+                                    "android": {
+                                        "notification": {
+                                          "channel_id": "pushnotification"
+                                        }
+                                    }
+                                }
+                            };
+                            try {
+                                sender.getAccessToken().then(async () => {
+                                    await sender.sendMessage(send_message);
+                                })
+                                //await sender.sendMessage(send_message);
+                            } catch (e) {
+                                console.error(`Error for row ${i + 1}: ${e.message}`);
+                                return res.status(500).json({error: e.message});
+                            }
+                    }
+                    console.log("Messages sent");
+                    return res.sendStatus(200);
+                }else{
+                    console.log({message: "No Active receivers"});
+                    return res.sendStatus(200);
+                }
+            }
+         }
+        )   
+        }catch(e){
+            console.log(e);
+            res.sendStatus(500);
+        }
+});
+
 app.post('/addStudent', async (req, res) => {
     try{
         let {name, email, phone, regnum, proctor} = req.body;
@@ -108,12 +235,35 @@ app.post('/addStudent', async (req, res) => {
 
 app.post('/addFaculty', async (req, res) => {
     try{
+        let {name, oemail, nemail, phone} = req.body;
+        console.log({name, oemail, nemail, phone});
+        await pool.query(`
+        update faculty
+        set name = $1,phone = $2, email= $3
+        where email = $4
+        returning name, email, phone`, [name, phone, nemail, oemail], (err, results) => {
+            if(err){
+                console.log(err.message);
+                res.status(500).send({error: err.message});
+            }else{
+                console.log(results.rows);
+                res.status(200).send(results.rows[0]);
+            }
+        });
+    }catch(e){
+        console.log(e.message);
+        res.status(500).send({error: e.message});
+    }
+})
+
+app.post('/addnewFaculty', async (req, res) => {
+    try{
+        console.log("Success");
         let {name, email, phone} = req.body;
         console.log({name, email, phone});
         await pool.query(`
-        update faculty
-        set name = $1, phone = $2
-        where email = $3
+        insert into faculty(name,phone,email)
+        values($1, $2, $3)
         returning name, email, phone`, [name, phone, email], (err, results) => {
             if(err){
                 console.log(err.message);
@@ -131,9 +281,11 @@ app.post('/addFaculty', async (req, res) => {
 
 app.get('/fetchStudents',(req, res) => {
     try{
-        pool.query(`select s.name, s.email, s.phone, s.regnum, f.name as pname, f.email as pemail, f.phone as pphone 
+        const proctor = req.query.proctor;
+        if(proctor != null){
+            pool.query(`select s.name, s.email, s.phone, s.regnum, f.name as pname, f.email as pemail, f.phone as pphone 
                     from student s, faculty f 
-                    where s.proctor = f.email`, async (err, results) => {
+                    where s.proctor = f.email and s.proctor = $1`, [proctor], async (err, results) => {
             if(err){
                 console.log(err.message);
                 res.status(500).send({error: err.message});
@@ -143,6 +295,22 @@ app.get('/fetchStudents',(req, res) => {
                 
             }
         });
+        }else{
+            console.log("No proctor");
+            pool.query(`select s.name, s.email, s.phone, s.regnum, f.name as pname, f.email as pemail, f.phone as pphone 
+            from student s, faculty f 
+            where s.proctor = f.email`, async (err, results) => {
+                if(err){
+                    console.log(err.message);
+                    res.status(500).send({error: err.message});
+                }else{
+                    console.log(results.rows);
+                    res.status(200).send(results.rows);
+                    
+                }
+            });
+        }
+        
     }catch(e){
         console.log(e.message);
         res.status(500).send({error: e.message});

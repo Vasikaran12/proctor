@@ -9,6 +9,7 @@ import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/constants/auth_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -57,12 +58,29 @@ class _LoginPageState extends State<LoginPage> {
                       
                     }
                     if(user != null){
-                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com") || user.email.contains("vineesha.v0102@gmail.com")){
+                      try{
+                      Response res = await get(
+                        Uri.parse('$url/checkUser?email=${user.email}',)
+                      );
+                      if(res.statusCode == 200){
                         if(user.email.contains("student.tce.edu")){
                           try{
                             Response res = await get(Uri.parse('$url/checkStudent?email=${user.email}'));
                             if(res.statusCode == 200){
                               debugPrint(jsonDecode(res.body).toString());
+                              SharedPreferences prefs = await SharedPreferences.getInstance();
+                                    String? t = prefs.getString('token');
+                                    if(t != null && t.isNotEmpty){
+                                      debugPrint("Token not null");
+                                      Response res = await get(
+                                        Uri.parse('$url/savetoken?token=$t&&email=${user.email}')
+                                      );
+                                      if(res.statusCode == 200){
+                                        debugPrint("Success");
+                                      }else{
+                                        debugPrint("Error in saving token");
+                                      }
+                                    }
                               Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addStudent(Student.fromMap(jsonDecode(res.body)));
                             }else if(res.statusCode == 400){
                               debugPrint("Success");
@@ -116,9 +134,16 @@ class _LoginPageState extends State<LoginPage> {
                             await google.signOut();
                           }
                         }                      
+                      }else if(res.statusCode == 201){
+                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setFaculty();
+                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty(name: "Admin", email: user.email, phone: "Admin"));
+                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setAdmin();
                       }else{
                         SnackBarGlobal.show("Please continue with your college E-Mail ID");
                         await google.signOut();
+                      }}catch(e){
+                        debugPrint(e.toString());
+                        SnackBarGlobal.show("Error occured while ");
                       }
                     }
                     setState(() {
@@ -137,10 +162,10 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(width: 20),
-                    const Text('CONTINUE WITH GOOGLE', style: TextStyle(
+                    Text('CONTINUE WITH GOOGLE', style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 20
+                      fontSize: MediaQuery.of(context).size.width * 0.045
                     ),),
                   ],
                 ),

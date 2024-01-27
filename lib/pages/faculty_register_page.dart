@@ -6,12 +6,14 @@ import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
 import 'package:proctor/models/faculty.dart';
-import 'package:proctor/models/student.dart';
+import 'package:proctor/pages/splash_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class FRegisterPage extends StatefulWidget {
-  const FRegisterPage({super.key});
+  final bool readOnly;
+  final Faculty faculty;
+  const FRegisterPage({super.key, required this.readOnly, required this.faculty});
 
   @override
   State<FRegisterPage> createState() => _FRegisterPageState();
@@ -20,6 +22,7 @@ class FRegisterPage extends StatefulWidget {
 class _FRegisterPageState extends State<FRegisterPage> {
   bool isloading = false;
   bool ispageloading = true;
+  String oemail = "";
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -36,7 +39,9 @@ class _FRegisterPageState extends State<FRegisterPage> {
 
   bool isName(String input) => RegExp(r'^[a-zA-Z .]+$').hasMatch(input);
 
-  final List<Faculty> faculties = [];
+  bool isEmail(String s) => RegExp(
+      r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+      .hasMatch(s);
 
   @override
   void initState(){
@@ -47,21 +52,10 @@ class _FRegisterPageState extends State<FRegisterPage> {
   }
 
   void init() async {
-    _nameController.text = Provider.of<UserProvider>(context, listen: false).faculty.name;
-      _emailController.text = Provider.of<UserProvider>(context, listen: false).faculty.email;
-      try{
-     Response res = await get(Uri.parse('$url/faculties'));
-     if(res.statusCode == 200){
-        List lt = jsonDecode(res.body);
-        for(int i=0; i<lt.length; i++){
-          faculties.add(Faculty.fromMap(lt[i]));
-        }
-     }else{
-        SnackBarGlobal.show("Error occured while fetching proctor names");
-     }
-     }catch(e){
-      debugPrint(e.toString());
-     }
+    _nameController.text = widget.faculty.email.isNotEmpty ? widget.faculty.name : Provider.of<UserProvider>(context, listen: false).faculty.name;
+      _emailController.text = widget.faculty.email.isNotEmpty ? widget.faculty.email : Provider.of<UserProvider>(context, listen: false).faculty.email;
+      _phoneController.text = widget.faculty.email.isNotEmpty ? widget.faculty.phone : Provider.of<UserProvider>(context, listen: false).faculty.phone;
+      oemail = _emailController.text;
       setState(() {
         ispageloading = false; 
       });
@@ -89,6 +83,11 @@ class _FRegisterPageState extends State<FRegisterPage> {
         ),
       ): Scaffold(
         appBar: AppBar(
+          leading: !widget.readOnly
+          ? IconButton(onPressed: (){
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_)=> const SplashPage()));
+          }, icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white,))
+          : null,
           actions: [
           isloading
               ? const SizedBox()
@@ -166,7 +165,15 @@ class _FRegisterPageState extends State<FRegisterPage> {
                         textInputAction: TextInputAction.next,
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         autofocus: false,
-                        readOnly: true,
+                        validator: (val) {
+                          if (val == null || val.isEmpty){
+                            return "Please enter the email";
+                          } else if (!isEmail(val)) {
+                            return "Please enter a valid email";
+                          }
+                          return null;
+                        },
+                        readOnly: widget.readOnly,
                         keyboardType: TextInputType.text,
                         controller: _emailController,
                         decoration: const InputDecoration(
@@ -214,7 +221,12 @@ class _FRegisterPageState extends State<FRegisterPage> {
                             child: const LinearProgressIndicator())
                         : InkWell(
                             onTap: () async {
-                              if (_formKey.currentState!.validate()) {
+                              final navigator = Navigator.of(context);
+                              if (_formKey.currentState!.validate() && 
+                                  (widget.readOnly || 
+                                  (!widget.readOnly && (widget.faculty.name != _nameController.text
+                                  || widget.faculty.email != _emailController.text
+                                  || widget.faculty.phone != _phoneController.text)))) {
                                 setState(() {
                                   isloading = true;
                                 });
@@ -227,7 +239,8 @@ class _FRegisterPageState extends State<FRegisterPage> {
                                   }.toString());
                                   Map<String, dynamic> data = {
                                     'name': _nameController.text,
-                                    'email': _emailController.text, 
+                                    'oemail': oemail, 
+                                    'nemail': _emailController.text, 
                                     'phone': _phoneController.text,
                                   };
                                   Response res = await post(Uri.parse('$url/addFaculty'), 
@@ -238,7 +251,13 @@ class _FRegisterPageState extends State<FRegisterPage> {
                                   debugPrint("hello1");
                                   if(res.statusCode == 200){
                                     debugPrint("hello ${jsonDecode(res.body)}");
-                                    Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty.fromMap(jsonDecode(res.body)));
+                                    if(widget.readOnly){
+                                      Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty.fromMap(jsonDecode(res.body)));
+                                    }else{
+                                      SnackBarGlobal.show("Profile updated");
+                                      navigator.pushReplacement(MaterialPageRoute(builder: (_)=> const SplashPage()));
+                                      
+                                    }
                                   }else{
                                     SnackBarGlobal.show("Error while registering user");
                                   }
@@ -253,9 +272,7 @@ class _FRegisterPageState extends State<FRegisterPage> {
                               }
                             },
                             child: Container(
-                              width: kIsWeb
-                                  ? MediaQuery.of(context).size.width / 2
-                                  : MediaQuery.of(context).size.width / 2,
+                              width: MediaQuery.of(context).size.width / 2,
                               height: 50,
                               decoration: BoxDecoration(
                                 color: kPrimaryColor,

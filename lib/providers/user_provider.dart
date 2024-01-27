@@ -7,9 +7,11 @@ class UserProvider extends ChangeNotifier{
   Student _student = Student(name: "", email: "", phone: "", regnum: "", faculty: Faculty(name: "", email: "", phone: ""));
 
   bool _isFaculty = false;
+  bool _isAdmin = false;
   
   Student get student => _student;
   bool get isFaculty => _isFaculty;
+  bool get isAdmin => _isAdmin;
   Faculty get faculty => _faculty;
 
   void addStudent(Student user){
@@ -26,11 +28,17 @@ class UserProvider extends ChangeNotifier{
     _student = Student(name: "", email: "", phone: "", regnum: "", faculty: _faculty); 
     _faculty = Faculty(name: "", email: "", phone: "");
     _isFaculty = false;
+    _isAdmin = false;
     notifyListeners();
   }
 
   void setFaculty(){
     _isFaculty = true;
+    notifyListeners();
+  }
+
+  void setAdmin(){
+    _isAdmin = true;
     notifyListeners();
   }
 }

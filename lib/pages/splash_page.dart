@@ -7,7 +7,9 @@ import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
 import 'package:proctor/models/faculty.dart';
 import 'package:proctor/models/student.dart';
+import 'package:proctor/pages/admin_home.dart';
 import 'package:proctor/pages/faculty_home_page.dart';
+import 'package:proctor/pages/faculty_search_page.dart';
 import 'package:proctor/pages/student_home_page.dart';
 import 'package:proctor/pages/login_page.dart';
 import 'package:proctor/pages/faculty_register_page.dart';
@@ -34,11 +36,15 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void validateStudent() async {
+    try{
       var signedIn = await google.isSignedIn();
       if(signedIn){
         GoogleSignInAccount? user = await google.signInSilently();
         if(user != null){
-                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com") || user.email.contains("vineesha.v0102@gmail.com")){
+                      Response res = await get(
+                        Uri.parse('$url/checkUser?email=${user.email}',)
+                      );
+                      if(res.statusCode == 200){
                         if(user.email.contains("student.tce.edu")){
                           try{
                             Response res = await get(Uri.parse('$url/checkStudent?email=${user.email}'));
@@ -55,6 +61,7 @@ class _SplashPageState extends State<SplashPage> {
                             debugPrint(e.toString());
                           }
                         }else{
+                          bool f = false;
                           List<Faculty> faculties = [];
                           try{
                             Response res = await get(Uri.parse('$url/faculties'));
@@ -72,6 +79,7 @@ class _SplashPageState extends State<SplashPage> {
                           for(int i = 0; i<faculties.length; i++){
                             debugPrint(faculties[i].email);
                             if(user.email == faculties[i].email){
+                              f = true;
                               debugPrint("Success 1212");
                               Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setFaculty();
                               try{
@@ -90,7 +98,17 @@ class _SplashPageState extends State<SplashPage> {
                               break;
                             }
                           }
+                          if(!f){
+                            SnackBarGlobal.show("Faculty profile not found. Please contact the Administrator");
+                            await google.signOut();
+                          }
                         }                      
+                      }else if(res.statusCode == 201){
+                        debugPrint("Called 201");
+                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setAdmin();
+                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setFaculty();
+                        Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty(name: "Admin", email: user.email, phone: "Admin"));
+                        
                       }else{
                         SnackBarGlobal.show("Please continue with your college E-Mail ID");
                         await google.signOut();
@@ -100,6 +118,9 @@ class _SplashPageState extends State<SplashPage> {
       setState(() {
         isloading = false;
       });
+    }catch(e){
+      debugPrint("Error");
+    }
   }
 
   @override
@@ -127,8 +148,10 @@ class _SplashPageState extends State<SplashPage> {
       ? Provider.of<UserProvider>(context).student.regnum.isEmpty 
       ? Provider.of<UserProvider>(context).isFaculty
       ? Provider.of<UserProvider>(context).faculty.phone.isEmpty
-      ? const FRegisterPage()
-      : const FacultyPage()
+      ? FRegisterPage(readOnly: true, faculty: Faculty(name: "", email: "", phone: ""),)
+      : Provider.of<UserProvider>(context).isAdmin
+      ? const AdminPage()
+      : const FHomePage()
       : const RegisterPage()
       : const HomePage()
       : const LoginPage();

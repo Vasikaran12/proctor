@@ -10,6 +10,7 @@ import 'package:proctor/models/faculty.dart';
 import 'package:proctor/models/student.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -323,6 +324,18 @@ class _RegisterPageState extends State<RegisterPage> {
                                   debugPrint("hello1");
                                   if(res.statusCode == 200){
                                     debugPrint("hello ${jsonDecode(res.body)}");
+                                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                                    String? t = prefs.getString('token');
+                                    if(t != null && t.isNotEmpty){
+                                      Response res = await get(
+                                        Uri.parse('$url/savetoken?token=$t&&email=${_emailController.text}')
+                                      );
+                                      if(res.statusCode == 200){
+                                        debugPrint("Success");
+                                      }else{
+                                        debugPrint("Error in saving token");
+                                      }
+                                    }
                                     Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addStudent(Student.fromMap(jsonDecode(res.body)));
                                   }else{
                                     SnackBarGlobal.show("Error while registering user");
