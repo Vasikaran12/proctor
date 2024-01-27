@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
 import 'package:proctor/models/faculty.dart';
@@ -48,14 +49,20 @@ class _LoginPageState extends State<LoginPage> {
                     setState(() {
                       isloading  = true;
                     });
-                    var user = await google.signIn();
+                    GoogleSignInAccount? user;
+                    try{
+                      user = await google.signIn();
+                    }catch(e){
+                      SnackBarGlobal.show("Error occured while logging in. Try again");
+                      
+                    }
                     if(user != null){
-                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com")){
+                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com") || user.email.contains("vineesha.v0102@gmail.com")){
                         if(user.email.contains("student.tce.edu")){
                           try{
                             Response res = await get(Uri.parse('$url/checkStudent?email=${user.email}'));
                             if(res.statusCode == 200){
-                              debugPrint(jsonDecode(res.body));
+                              debugPrint(jsonDecode(res.body).toString());
                               Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addStudent(Student.fromMap(jsonDecode(res.body)));
                             }else if(res.statusCode == 400){
                               debugPrint("Success");
@@ -67,6 +74,7 @@ class _LoginPageState extends State<LoginPage> {
                             debugPrint(e.toString());
                           }
                         }else{
+                          bool f = false;
                           List<Faculty> faculties = [];
                           try{
                             Response res = await get(Uri.parse('$url/faculties'));
@@ -84,6 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                           for(int i = 0; i<faculties.length; i++){
                             debugPrint(faculties[i].email);
                             if(user.email == faculties[i].email){
+                              f = true;
                               debugPrint("Success 1212");
                               Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).setFaculty();
                               try{
@@ -101,6 +110,10 @@ class _LoginPageState extends State<LoginPage> {
                               }
                               break;
                             }
+                          }
+                          if(!f){
+                            SnackBarGlobal.show("Faculty profile not found. Please contact the Administrator");
+                            await google.signOut();
                           }
                         }                      
                       }else{

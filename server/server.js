@@ -129,6 +129,26 @@ app.post('/addFaculty', async (req, res) => {
     }
 })
 
+app.get('/fetchStudents',(req, res) => {
+    try{
+        pool.query(`select s.name, s.email, s.phone, s.regnum, f.name as pname, f.email as pemail, f.phone as pphone 
+                    from student s, faculty f 
+                    where s.proctor = f.email`, async (err, results) => {
+            if(err){
+                console.log(err.message);
+                res.status(500).send({error: err.message});
+            }else{
+                console.log(results.rows);
+                res.status(200).send(results.rows);
+                
+            }
+        });
+    }catch(e){
+        console.log(e.message);
+        res.status(500).send({error: e.message});
+    }
+})
+
 app.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
 });

@@ -38,7 +38,7 @@ class _SplashPageState extends State<SplashPage> {
       if(signedIn){
         GoogleSignInAccount? user = await google.signInSilently();
         if(user != null){
-                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com")){
+                      if(user.email.contains("tce.edu") || user.email.contains("vasikaran6131@gmail.com") || user.email.contains("vineesha.v0102@gmail.com")){
                         if(user.email.contains("student.tce.edu")){
                           try{
                             Response res = await get(Uri.parse('$url/checkStudent?email=${user.email}'));
