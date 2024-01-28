@@ -40,7 +40,7 @@ app.get('/checkUser', (req, res) => {
 
 app.get('/faculties', async (req, res) => {
     try{
-        await pool.query(`select * from faculty order by name;`, (err, results) => {
+        await pool.query(`select * from faculty where name != 'Admin' order by name;`, (err, results) => {
             if(err){
                 console.log(err.message);
             }else{
@@ -316,6 +316,38 @@ app.get('/fetchStudents',(req, res) => {
         res.status(500).send({error: e.message});
     }
 })
+
+app.get('/getmessages', async (req, res) => {
+    const remail = req.query.email; 
+    console.log({remail});
+    try{
+        pool.query(
+            `SELECT m.message AS message,
+             COALESCE(s.name, f.name) AS title,
+             TO_CHAR(m.time, 'DD-MM-YYYY HH:MI AM') AS time
+             FROM messages m
+             LEFT JOIN
+             student s ON m.sender = s.email
+             LEFT JOIN
+             faculty f ON m.sender = f.email
+             WHERE
+             m.receiver = $1
+             order by time DESC;`, [remail],
+            (err, results)=>{
+                if(err) {
+                    console.log(err.message);
+                    return res.status(500).json({error: err.message});
+                }else{
+                    return res.status(200).json(results.rows);
+                }
+            }
+        )
+        console.log("Fetched messages");
+    }catch(e){
+        console.log(e.message);
+        return res.status(500).json({error: e.message});
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);

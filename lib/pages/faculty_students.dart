@@ -21,7 +21,7 @@ class _FacultyPageState extends State<FacultyStudentPage> {
   bool isloading = true;
   String search = "";
   final _searchcontroller = TextEditingController();
-  List<String> filter = ['Name', 'Register Number', 'Email', 'Phone', 'Proctor'];
+  List<String> filter = ['Name', 'Register Number', 'Email', 'Phone'];
   String selectedFilter = 'Name';
 
   Future<List<Student>> fetchStudents() async {

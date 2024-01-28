@@ -116,6 +116,19 @@ class _LoginPageState extends State<LoginPage> {
                               try{
                                 Response res = await get(Uri.parse('$url/checkFaculty?email=${user.email}'));
                                 if(res.statusCode == 200){
+                                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                                    String? t = prefs.getString('token');
+                                    if(t != null && t.isNotEmpty){
+                                      debugPrint("Token not null");
+                                      Response res = await get(
+                                        Uri.parse('$url/savetoken?token=$t&&email=${user.email}')
+                                      );
+                                      if(res.statusCode == 200){
+                                        debugPrint("Success");
+                                      }else{
+                                        debugPrint("Error in saving token");
+                                      }
+                                    }
                                   Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty.fromJson(res.body));
                                 }else if(res.statusCode == 400){
                                   debugPrint("Success");

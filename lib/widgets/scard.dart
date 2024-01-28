@@ -28,6 +28,7 @@ class _SIdCardState extends State<SIdCard> {
   final _smsgController = TextEditingController(); 
   final _fmsgController = TextEditingController(); 
   bool issendingS = false;
+  bool issendingF = false;
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +195,7 @@ class _SIdCardState extends State<SIdCard> {
 
                                     ),
                           issendingS
-                          ? const CircularProgressIndicator()
+                          ? const CircularProgressIndicator(color: Colors.white,) 
                           : InkWell(
                           onTap: () async {
                             if(_smsgController.text.isNotEmpty){
@@ -418,15 +419,22 @@ class _SIdCardState extends State<SIdCard> {
 ),
 
                                     ),
-                          InkWell(
+                          issendingF
+                          ? const CircularProgressIndicator(color: Colors.white,) 
+                          : InkWell(
                           onTap: () async {
+                            
                             if(_fmsgController.text.isNotEmpty){
+                              setState(() {
+                                issendingF = true;
+                              });
                               Map data = {
                                 'sname': Provider.of<UserProvider>(context, listen: false).faculty.name,
                                 'semail': Provider.of<UserProvider>(context, listen: false).faculty.email,
                                 'remail': widget.pemail,
                                 'message': _fmsgController.text
                               };
+                              try{
                               Response res = await post(Uri.parse('$url/sendmessage'), 
                                   headers: <String, String>{
                                     'Content-Type': 'application/json; charset=UTF-8',
@@ -434,12 +442,22 @@ class _SIdCardState extends State<SIdCard> {
                                   body: jsonEncode(data));
                                   debugPrint("hello1");
                                   if(res.statusCode == 200){
-
-                                  }
+                                      
                               setState(() {
                               _fmsgController.text = "";
                             });
                             SnackBarGlobal.show("Message sent");
+                                  }else{
+                                SnackBarGlobal.show("Error while sending message");
+                                  }
+                              
+                              }catch(e){
+                                debugPrint(e.toString());
+                                SnackBarGlobal.show("Error while sending message");
+                              }
+                              setState(() {
+                                issendingF = false;
+                              });
                             }
                           },
                           child: Container(

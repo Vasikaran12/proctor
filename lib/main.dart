@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/firebase_options.dart';
+import 'package:proctor/pages/notification_page.dart';
 import 'package:proctor/pages/splash_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/services.dart/local_notification.dart';
@@ -31,7 +32,7 @@ void main() async {
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) async {
     debugPrint("Message hello : $msg");
     try{
-    if(await google.isSignedIn()){
+    if(google.currentUser != null){
       SnackBarGlobal.showNotification(msg.notification!.title ?? "", msg.notification!.body ?? "");
     }}catch(e){
       debugPrint(e.toString());
@@ -41,11 +42,14 @@ void main() async {
   FirebaseMessaging.instance
         .getInitialMessage()
         .then((RemoteMessage? msg) async {
-      if (msg != null) {
+          debugPrint("Called instance");
+      if(msg != null){
         try{
+          await Navigator.push(navigationKey.currentContext!, MaterialPageRoute(builder: (_)=> const NotifyPage()));
           if(await google.isSignedIn()){
             SnackBarGlobal.showNotification(msg.notification!.title ?? "", msg.notification!.body ?? "");
-          }}catch(e){
+          }
+        }catch(e){
             debugPrint(e.toString());
         }
       }
@@ -53,8 +57,13 @@ void main() async {
 
     FirebaseMessaging.onMessage.listen((msg) {
       debugPrint('listen message');
+        try{
+          if(google.currentUser != null){
             SnackBarGlobal.showNotification(msg.notification!.title ?? "", msg.notification!.body ?? "");
-      LocalNotificationServices.createNotification(msg);
+          }
+        }catch(e){
+            debugPrint(e.toString());
+        }
     });
 
     await FirebaseMessaging.instance
@@ -182,22 +191,21 @@ class SnackBarGlobal {
                         barrierDismissible: false,
                         context: navigationKey.currentContext!,
                         builder:(context) => AlertDialog(
-                          
                           title: Text(title, style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold),),
-                          content: ScrollConfiguration(
-                            behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-                            child: SingleChildScrollView(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: kPrimaryLight,
-                                  borderRadius: BorderRadius.circular(15)
-                                ),
+                          content: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: kPrimaryColor),
+                              borderRadius: BorderRadius.circular(15)
+                            ),
+                            child: ScrollConfiguration(
+                                                      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                              child: SingleChildScrollView(
                                 child: Padding(
                                   padding: const EdgeInsets.all(15.0),
-                                  child: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500), maxLines: null,),
-                                )),
-                            ),
-                          ),
+                                  child: Text(message, style: TextStyle(color: Colors.grey[900], fontWeight: FontWeight.w500), maxLines: null,),
+                                ),
+                              ),
+                            )),
                           actions: [
                             ElevatedButton(
                     onPressed: () {

@@ -3,7 +3,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart';
 
 class LocalNotificationServices {
   static List<String> extractInnerMessages(String input) {
@@ -30,7 +29,7 @@ class LocalNotificationServices {
   static Future initialize() async {
     const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: AndroidInitializationSettings("@mipmap/ic_launcher"),
+      android: AndroidInitializationSettings("proctor_logo"),
     );
 
     notificationsPlugin.initialize(initializationSettings,
@@ -40,15 +39,6 @@ class LocalNotificationServices {
 
   static void createNotification(RemoteMessage message) async {
     try {
-      final id = DateTime(
-                  TZDateTime.now(local).year,
-                  TZDateTime.now(local).month,
-                  TZDateTime.now(local).day,
-                  TZDateTime.now(local).hour,
-                  TZDateTime.now(local).minute,
-                  TZDateTime.now(local).second)
-              .millisecondsSinceEpoch ~/
-          1000;
       const NotificationDetails notificationDetails = NotificationDetails(
           android: AndroidNotificationDetails(
         "pushnotification",
@@ -56,21 +46,8 @@ class LocalNotificationServices {
         importance: Importance.max,
         priority: Priority.high,
       ));
-      debugPrint(message.notification!.android!.clickAction);
-      /*await notificationsPlugin.zonedSchedule(
-          id,
-          'Notification Title',
-          'Notification Body',
-          TZDateTime.now(getLocation('Asia/Kolkata')),
-          notificationDetails,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          
-          matchDateTimeComponents: DateTimeComponents.time);*/
-      await notificationsPlugin.show(id, message.notification!.title,
-          message.notification!.body, notificationDetails,
-          payload:
-              '${message.notification!.title}${message.notification!.body ?? " "}');
+      await notificationsPlugin.show(0, message.notification!.title,
+      message.notification!.body, notificationDetails,);
       //notificationsPlugin.runtimeType
     } on Exception catch (e) {
       debugPrint(e.toString());

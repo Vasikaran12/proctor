@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
 import 'package:proctor/pages/student_profile.dart';
+import 'package:proctor/providers/user_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class IdCard extends StatefulWidget {
@@ -18,6 +24,8 @@ class IdCard extends StatefulWidget {
 
 class _IdCardState extends State<IdCard> {
   bool isloading = false;
+  bool issendingF = false;
+
   final _msgController = TextEditingController();
   @override
   Widget build(BuildContext context) {
@@ -230,12 +238,45 @@ class _IdCardState extends State<IdCard> {
     ),
     
                                 ),
-                      InkWell(
+                      issendingF
+                      ? const CircularProgressIndicator(color: Colors.white,)
+                      : InkWell(
                       onTap: () async {
-                        setState(() {
-                          _msgController.text = "";
-                        });
-                        SnackBarGlobal.show("Message sent");
+                            if(_msgController.text.isNotEmpty){
+                              setState(() {
+                                issendingF = true;
+                              });
+                              Map data = {
+                                'sname': Provider.of<UserProvider>(context, listen: false).student.name,
+                                'semail': Provider.of<UserProvider>(context, listen: false).student.email,
+                                'remail': widget.pemail,
+                                'message': _msgController.text
+                              };
+                              try{
+                              Response res = await post(Uri.parse('$url/sendmessage'), 
+                                  headers: <String, String>{
+                                    'Content-Type': 'application/json; charset=UTF-8',
+                                  },
+                                  body: jsonEncode(data));
+                                  debugPrint("hello1");
+                                  if(res.statusCode == 200){
+                                      
+                              setState(() {
+                              _msgController.text = "";
+                            });
+                            SnackBarGlobal.show("Message sent");
+                                  }else{
+                                SnackBarGlobal.show("Error while sending message");
+                                  }
+                              
+                              }catch(e){
+                                debugPrint(e.toString());
+                                SnackBarGlobal.show("Error while sending message");
+                              }
+                              setState(() {
+                                issendingF = false;
+                              });
+                            }
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width * 0.1,

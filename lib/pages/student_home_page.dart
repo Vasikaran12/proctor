@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/main.dart';
+import 'package:proctor/pages/notification_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/widgets/card.dart';
@@ -26,6 +27,12 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: kPrimaryColor,
         foregroundColor: Colors.white,
         actions: [
+          isloading
+          ? const SizedBox()
+          : IconButton(onPressed: (){
+            Navigator.push(context, MaterialPageRoute(builder: (_)=> const NotifyPage()));
+          }, icon: const Icon(Icons.notifications_active, size: 30,)),
+          const SizedBox(width: 10,),
           isloading
           ? const SizedBox()
           : IconButton(onPressed: () async {

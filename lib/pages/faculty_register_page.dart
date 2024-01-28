@@ -9,6 +9,7 @@ import 'package:proctor/models/faculty.dart';
 import 'package:proctor/pages/splash_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FRegisterPage extends StatefulWidget {
   final bool readOnly;
@@ -252,11 +253,24 @@ class _FRegisterPageState extends State<FRegisterPage> {
                                   if(res.statusCode == 200){
                                     debugPrint("hello ${jsonDecode(res.body)}");
                                     if(widget.readOnly){
+                                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                                    String? t = prefs.getString('token');
+                                    if(t != null && t.isNotEmpty){
+                                      debugPrint("Token not null");
+                                      Response res = await get(
+                                        // ignore: use_build_context_synchronously
+                                        Uri.parse('$url/savetoken?token=$t&&email=${Provider.of<UserProvider>(context, listen: false).faculty.email}')
+                                      );
+                                      if(res.statusCode == 200){
+                                        debugPrint("Success");
+                                      }else{
+                                        debugPrint("Error in saving token");
+                                      }
+                                    }
                                       Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addFaculty(Faculty.fromMap(jsonDecode(res.body)));
                                     }else{
                                       SnackBarGlobal.show("Profile updated");
                                       navigator.pushReplacement(MaterialPageRoute(builder: (_)=> const SplashPage()));
-                                      
                                     }
                                   }else{
                                     SnackBarGlobal.show("Error while registering user");
