@@ -18,7 +18,7 @@ const pool = new Pool({
 app.get('/checkUser', (req, res) => {
     try{
     const email = req.query.email;
-    if(email.includes("victoriousvasikaran123@gmail.com")){
+    if(email.includes("victoriousvasikaran123@gmail.com") || email.includes('vutukuruvineesha2004@gmail.com')){
         console.log("Admin");
         res.sendStatus(201);
     }else if(
