@@ -202,6 +202,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           return null;
                         },
                         keyboardType: TextInputType.text,
+                        
                         controller: _nameController,
                         decoration: const InputDecoration(
                           labelText: "Name",
@@ -249,7 +250,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           }
                           return null;
                         },
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
                         controller: _phoneController,
                         decoration: const InputDecoration(
                           labelText: "Phone Number",
@@ -266,6 +267,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: TextFormField(
                         enabled: !isloading,
                         textInputAction: TextInputAction.done,
+                        textCapitalization: TextCapitalization.characters,
+                        
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         validator: (val) {
                           if (val == null || val.isEmpty) {

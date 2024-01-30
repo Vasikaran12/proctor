@@ -16,7 +16,13 @@ class IdCard extends StatefulWidget {
   final String pname;
   final String pphone;
   final String pemail;
-  const IdCard({super.key, required this.name, required this.regnum, required this.pname, required this.pphone, required this.pemail});
+  const IdCard(
+      {super.key,
+      required this.name,
+      required this.regnum,
+      required this.pname,
+      required this.pphone,
+      required this.pemail});
 
   @override
   State<IdCard> createState() => _IdCardState();
@@ -36,9 +42,8 @@ class _IdCardState extends State<IdCard> {
           Container(
             width: MediaQuery.of(context).size.width * 0.9,
             decoration: const BoxDecoration(
-              color: kPrimaryLight,
-              borderRadius: BorderRadius.all(Radius.circular(20))
-            ),
+                color: kPrimaryLight,
+                borderRadius: BorderRadius.all(Radius.circular(20))),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -46,17 +51,21 @@ class _IdCardState extends State<IdCard> {
                   height: 20,
                 ),
                 InkWell(
-                  onTap: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (_)=> const ProfilePage()));
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const ProfilePage()));
                   },
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
-                    child: CircleAvatar(
-                      radius: MediaQuery.of(context).size.width * 0.09,
-                      backgroundColor: Colors.white,
-                      child: const Icon(Icons.person, size: 54, color: kPrimaryColor,),
-                    )
-                  ),
+                      padding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+                      child: CircleAvatar(
+                        radius: MediaQuery.of(context).size.width * 0.09,
+                        backgroundColor: Colors.white,
+                        child: const Icon(
+                          Icons.person,
+                          size: 54,
+                          color: kPrimaryColor,
+                        ),
+                      )),
                 ),
                 const SizedBox(
                   height: 18,
@@ -76,17 +85,15 @@ class _IdCardState extends State<IdCard> {
                 Text(
                   widget.regnum,
                   style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey.shade100,
-                    fontWeight: FontWeight.bold
-                  ),
+                      fontSize: 15,
+                      color: Colors.grey.shade100,
+                      fontWeight: FontWeight.bold),
                 ),
-                
                 const SizedBox(
                   height: 25,
                 ),
                 /**/
-                
+
                 Divider(
                   thickness: 1.15,
                   indent: MediaQuery.of(context).size.width * 0.1,
@@ -100,7 +107,8 @@ class _IdCardState extends State<IdCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Icon(Icons.person_pin_rounded, color: Colors.white, size:27),
+                    const Icon(Icons.person_pin_rounded,
+                        color: Colors.white, size: 27),
                     const SizedBox(
                       width: 12,
                     ),
@@ -124,19 +132,20 @@ class _IdCardState extends State<IdCard> {
                   children: [
                     InkWell(
                       onTap: () async {
-                        if(widget.pphone.isNotEmpty){
-                          try{
-                            if(await canLaunchUrl(Uri.parse("tel:${widget.pphone}"))){
-                              await  launchUrl(Uri.parse("tel:${widget.pphone}"));
-     
-                            }else {
+                        if (widget.pphone.isNotEmpty) {
+                          try {
+                            if (await canLaunchUrl(
+                                Uri.parse("tel:${widget.pphone}"))) {
+                              await launchUrl(
+                                  Uri.parse("tel:${widget.pphone}"));
+                            } else {
                               throw 'Could not launch';
                             }
-                          }catch(e){
+                          } catch (e) {
                             debugPrint(e.toString());
                             SnackBarGlobal.show("Try Again later");
                           }
-                        }else{
+                        } else {
                           SnackBarGlobal.show("Phone number not available");
                         }
                       },
@@ -160,17 +169,20 @@ class _IdCardState extends State<IdCard> {
                     ),
                     InkWell(
                       onTap: () async {
-                        try{
-                          if(await canLaunchUrl(Uri.parse("tel:${widget.pphone}"))){
-                              if(await canLaunchUrl(Uri.parse("tel:${widget.pphone}"))){
-                              await launchUrl(Uri.parse("mailto:${widget.pemail}")); 
-                            }else {
+                        try {
+                          if (await canLaunchUrl(
+                              Uri.parse("tel:${widget.pphone}"))) {
+                            if (await canLaunchUrl(
+                                Uri.parse("tel:${widget.pphone}"))) {
+                              await launchUrl(
+                                  Uri.parse("mailto:${widget.pemail}"));
+                            } else {
                               throw 'Could not launch';
                             }
-                            }else {
-                              throw 'Could not launch';
-                            }
-                        }catch(e){
+                          } else {
+                            throw 'Could not launch';
+                          }
+                        } catch (e) {
                           debugPrint(e.toString());
                           SnackBarGlobal.show("Try Again later");
                         }
@@ -189,11 +201,8 @@ class _IdCardState extends State<IdCard> {
                         ),
                       ),
                     ),
-                    
-                    
                   ],
                 ),
-              
                 const SizedBox(
                   height: 30,
                 ),
@@ -201,97 +210,105 @@ class _IdCardState extends State<IdCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     SizedBox(
-                                  width: MediaQuery.of(context).size.width / 1.5,
-                                  child: TextFormField(
-      maxLines: null,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w500,
-        fontSize: 17,
-      
-      ),
-      keyboardType: TextInputType.emailAddress,
-      controller: _msgController,
-      cursorColor: Colors.white,
-      decoration: const InputDecoration(
-        
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-    color: Colors.white, // Set your desired border color here
-          ),
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-    color: Colors.white, // Set your desired border color here
-          ),
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        labelText: "Enter your message",
-        labelStyle: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
-          fontSize: 20,
-        ),
-        
-      ),
-    ),
-    
-                                ),
-                      issendingF
-                      ? const CircularProgressIndicator(color: Colors.white,)
-                      : InkWell(
-                      onTap: () async {
-                            if(_msgController.text.isNotEmpty){
-                              setState(() {
-                                issendingF = true;
-                              });
-                              Map data = {
-                                'sname': Provider.of<UserProvider>(context, listen: false).student.name,
-                                'semail': Provider.of<UserProvider>(context, listen: false).student.email,
-                                'remail': widget.pemail,
-                                'message': _msgController.text
-                              };
-                              try{
-                              Response res = await post(Uri.parse('$url/sendmessage'), 
-                                  headers: <String, String>{
-                                    'Content-Type': 'application/json; charset=UTF-8',
-                                  },
-                                  body: jsonEncode(data));
-                                  debugPrint("hello1");
-                                  if(res.statusCode == 200){
-                                      
-                              setState(() {
-                              _msgController.text = "";
-                            });
-                            SnackBarGlobal.show("Message sent");
-                                  }else{
-                                SnackBarGlobal.show("Error while sending message");
-                                  }
-                              
-                              }catch(e){
-                                debugPrint(e.toString());
-                                SnackBarGlobal.show("Error while sending message");
-                              }
-                              setState(() {
-                                issendingF = false;
-                              });
-                            }
-                      },
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 0.1,
-                        height: MediaQuery.of(context).size.width * 0.1,
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent.shade400,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.send_rounded,
+                      width: MediaQuery.of(context).size.width / 1.5,
+                      child: TextFormField(
+                        maxLines: null,
+                        style: const TextStyle(
                           color: Colors.white,
-                          size: 24,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17,
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        controller: _msgController,
+                        cursorColor: Colors.white,
+                        decoration: const InputDecoration(
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors
+                                  .white, // Set your desired border color here
+                            ),
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors
+                                  .white, // Set your desired border color here
+                            ),
+                            borderRadius: BorderRadius.all(Radius.circular(20)),
+                          ),
+                          labelText: "Enter your message",
+                          labelStyle: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 20,
+                          ),
                         ),
                       ),
-                    )
+                    ),
+                    issendingF
+                        ? const CircularProgressIndicator(
+                            color: Colors.white,
+                          )
+                        : InkWell(
+                            onTap: () async {
+                              if (_msgController.text.isNotEmpty) {
+                                setState(() {
+                                  issendingF = true;
+                                });
+                                Map data = {
+                                  'sname': Provider.of<UserProvider>(context,
+                                          listen: false)
+                                      .student
+                                      .name,
+                                  'semail': Provider.of<UserProvider>(context,
+                                          listen: false)
+                                      .student
+                                      .email,
+                                  'remail': widget.pemail,
+                                  'message': _msgController.text
+                                };
+                                try {
+                                  Response res =
+                                      await post(Uri.parse('$url/sendmessage'),
+                                          headers: <String, String>{
+                                            'Content-Type':
+                                                'application/json; charset=UTF-8',
+                                          },
+                                          body: jsonEncode(data));
+                                  debugPrint("hello1");
+                                  if (res.statusCode == 200) {
+                                    setState(() {
+                                      _msgController.text = "";
+                                    });
+                                    SnackBarGlobal.show("Message sent");
+                                  } else {
+                                    SnackBarGlobal.show(
+                                        "Error while sending message");
+                                  }
+                                } catch (e) {
+                                  debugPrint(e.toString());
+                                  SnackBarGlobal.show(
+                                      "Error while sending message");
+                                }
+                                setState(() {
+                                  issendingF = false;
+                                });
+                              }
+                            },
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.1,
+                              height: MediaQuery.of(context).size.width * 0.1,
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.shade400,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          )
                   ],
                 ),
                 const SizedBox(

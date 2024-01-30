@@ -45,6 +45,13 @@ dependencies:
   firebase_messaging: ^14.7.10
   flutter_local_notifications: ^16.3.2
   timezone: ^0.9.2
+  socket_io_client: ^2.0.3+1
+  intl: ^0.19.0
+  cloud_firestore: ^4.14.0
+  firebase_auth: ^4.16.0
+  get: ^4.6.6
+  nearby_connections: ^3.2.0
+  csv: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +78,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets\google.png
+    - assets\whatsapp_Back.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

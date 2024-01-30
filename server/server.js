@@ -1,15 +1,35 @@
-const express = require('express')
+const express = require('express');
 const {Pool} = require('pg');
 const cors = require('cors');
 const fcm = require("./services/push_notification");
 require('dotenv').config();
 
 const app = express();
+const http = require('http').createServer(app);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 app.use(cors());
+
+const socketio = require('socket.io')(http)
+
+var clients = {};
+
+socketio.on("connection", (socket) => {
+  console.log("connetetd");
+  console.log(socket.id, "has joined");
+  socket.on("signin", (id) => {
+    console.log(id);
+    clients[id] = socket;
+    console.log(clients);
+  });
+  socket.on("message", (msg) => {
+    console.log(msg);
+    let targetId = msg.targetId;
+    if (clients[targetId]) clients[targetId].emit("message", msg);
+  });
+});
 
 const pool = new Pool({
   connectionString: process.env.DB_URL
@@ -349,6 +369,6 @@ app.get('/getmessages', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+http.listen(PORT, () => {
     console.log(`Server running on ${PORT}`);
 });
