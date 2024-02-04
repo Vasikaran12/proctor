@@ -1,8 +1,9 @@
+import 'package:intl/intl.dart';
 import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/main.dart';
+import 'package:proctor/models/faculty.dart';
 import 'package:proctor/models/message_model.dart';
 import 'package:flutter/material.dart';
-import 'package:proctor/models/student.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/services/db.dart';
 import 'package:proctor/widgets/own_message.dart';
@@ -14,8 +15,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../constants/color.dart';
 
 class IndividualPage extends StatefulWidget {
-  final Student student;
-  const IndividualPage({super.key, required this.student});
+  final Faculty faculty;
+  const IndividualPage({super.key, required this.faculty});
 
   @override
   State<IndividualPage> createState() => _IndividualPageState();
@@ -36,19 +37,20 @@ class _IndividualPageState extends State<IndividualPage> {
     connect();
   }
 
-  @override
-  void dispose() {
-    debugPrint("called");
-    socket.close();
-    super.dispose();
-  }
-
   void getMessages() async {
-    List<Message>? tempmessages = await DB().getMessage(widget.student.email,
-        Provider.of<UserProvider>(context, listen: false).faculty.email);
+    List<Message>? tempmessages = await DB().getMessage(widget.faculty.email,
+        Provider.of<UserProvider>(context, listen: false).student.email);
     setState(() {
       messages = tempmessages ?? [];
     });
+    await jumpToBottom();
+  }
+
+  Future<void> jumpToBottom() async {
+    if (_scrollController.hasClients) {
+      final position = _scrollController.position.maxScrollExtent;
+      _scrollController.jumpTo(position);
+    }
   }
 
   void connect() {
@@ -59,9 +61,9 @@ class _IndividualPageState extends State<IndividualPage> {
     });
     socket.connect();
     socket.emit("signin",
-        Provider.of<UserProvider>(context, listen: false).faculty.email);
+        Provider.of<UserProvider>(context, listen: false).student.email);
     socket.onConnect((data) {
-      debugPrint("Connected");
+      debugPrint("Signed In");
     });
 
     socket.on("message", (msg) {
@@ -70,7 +72,7 @@ class _IndividualPageState extends State<IndividualPage> {
         debugPrint("hello");
         setMessage(
             msg['sender'],
-            Provider.of<UserProvider>(context, listen: false).faculty.email,
+            Provider.of<UserProvider>(context, listen: false).student.email,
             msg["message"]);
       } catch (e) {
         debugPrint(e.toString());
@@ -79,9 +81,15 @@ class _IndividualPageState extends State<IndividualPage> {
     debugPrint(socket.connected.toString());
   }
 
+  @override
+  void dispose() {
+    debugPrint("called");
+    socket.close();
+    super.dispose();
+  }
+
   void sendMessage(String message, String sourceId, String targetId) {
-    setMessage(Provider.of<UserProvider>(context, listen: false).faculty.email,
-        widget.student.email, message);
+    setMessage(sourceId, targetId, message);
 
     socket.emit("message",
         {"message": message, "sender": sourceId, "targetId": targetId});
@@ -116,22 +124,15 @@ class _IndividualPageState extends State<IndividualPage> {
               backgroundColor: kPrimaryColor,
               leadingWidth: 70,
               titleSpacing: 0,
-              leading: InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 24,
-                  color: Colors.white,
-                ),
-              ),
               title: GestureDetector(
                 onTap: () {
                   SnackBarGlobal.show("message");
                 },
                 child: Row(
                   children: [
+                    const SizedBox(
+                      width: 20,
+                    ),
                     const CircleAvatar(
                       radius: 20,
                       backgroundColor: Colors.white,
@@ -152,17 +153,12 @@ class _IndividualPageState extends State<IndividualPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.student.name,
+                              widget.faculty.name,
                               style: const TextStyle(
                                   fontSize: 18.5,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white),
                             ),
-                            Text(
-                              widget.student.regnum,
-                              style: const TextStyle(
-                                  fontSize: 13, color: Colors.white),
-                            )
                           ],
                         ),
                       ),
@@ -177,12 +173,12 @@ class _IndividualPageState extends State<IndividualPage> {
                       color: Colors.white,
                     ),
                     onPressed: () async {
-                      if (widget.student.phone.isNotEmpty) {
+                      if (widget.faculty.phone.isNotEmpty) {
                         try {
                           if (await canLaunchUrl(
-                              Uri.parse("tel:${widget.student.phone}"))) {
+                              Uri.parse("tel:${widget.faculty.phone}"))) {
                             await launchUrl(
-                                Uri.parse("tel:${widget.student.phone}"));
+                                Uri.parse("tel:${widget.faculty.phone}"));
                           } else {
                             throw 'Could not launch';
                           }
@@ -199,7 +195,7 @@ class _IndividualPageState extends State<IndividualPage> {
                     onPressed: () async {
                       try {
                         await launchUrl(
-                            Uri.parse("mailto:${widget.student.email}"));
+                            Uri.parse("mailto:${widget.faculty.email}"));
                       } catch (e) {
                         debugPrint(e.toString());
                         SnackBarGlobal.show("Try Again later");
@@ -216,9 +212,35 @@ class _IndividualPageState extends State<IndividualPage> {
             width: MediaQuery.of(context).size.width,
             child: Column(
               children: [
-                const SizedBox(height: 15),
+                const SizedBox(
+                  height: 20,
+                ),
                 Expanded(
-                  child: ListView.builder(
+                  child: ListView.separated(
+                    separatorBuilder: (context, index) {
+                      //messages[index].time
+                      if (index != messages.length - 1 &&
+                          messages[index].time.substring(0, 10) !=
+                              messages[index].time.substring(0, 10)) {
+                        return Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            width: 100,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8)),
+                            child:
+                                Center(
+                                  child: Text(DateFormat('d MMM, yyyy').format(DateTime.parse(messages[index + 1].time)), style: const TextStyle(
+                                    fontSize: 12
+                                  ),),
+                                ),
+                          ),
+                        );
+                      } else {
+                        return const SizedBox();
+                      }
+                    },
                     controller: _scrollController,
                     itemCount: messages.length + 1,
                     itemBuilder: (context, index) {
@@ -229,16 +251,17 @@ class _IndividualPageState extends State<IndividualPage> {
                       }
                       if (messages[index].sender ==
                           Provider.of<UserProvider>(context, listen: false)
-                              .faculty
+                              .student
                               .email) {
+                        debugPrint(messages[index].time);
                         return OwnMessageCard(
                           message: messages[index].message,
-                          time: messages[index].time.substring(10, 16),
+                          time: messages[index].time.substring(11, 16),
                         );
                       } else {
                         return ReplyCard(
                           message: messages[index].message,
-                          time: messages[index].time.substring(10, 16),
+                          time: messages[index].time.substring(11, 16),
                         );
                       }
                     },
@@ -252,8 +275,8 @@ class _IndividualPageState extends State<IndividualPage> {
                     SizedBox(
                       width: MediaQuery.of(context).size.width - 86,
                       child: Card(
-                        margin: const EdgeInsets.only(
-                            left: 2, right: 2, bottom: 8),
+                        margin:
+                            const EdgeInsets.only(left: 2, right: 2, bottom: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
@@ -278,8 +301,7 @@ class _IndividualPageState extends State<IndividualPage> {
                           decoration: InputDecoration(
                               border: InputBorder.none,
                               hintText: "Type a message",
-                              hintStyle:
-                                  const TextStyle(color: Colors.grey),
+                              hintStyle: const TextStyle(color: Colors.grey),
                               prefixIcon: const Icon(Icons.keyboard),
                               suffixIcon: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -288,17 +310,15 @@ class _IndividualPageState extends State<IndividualPage> {
                                     icon: const Icon(Icons.attach_file),
                                     onPressed: () {
                                       showModalBottomSheet(
-                                          backgroundColor:
-                                              Colors.transparent,
+                                          backgroundColor: Colors.transparent,
                                           context: context,
-                                          builder: (builder) =>
-                                              bottomSheet());
+                                          builder: (builder) => bottomSheet());
                                     },
                                   ),
                                 ],
                               ),
-                              contentPadding: const EdgeInsets.only(
-                                  top: 10, bottom: 10)),
+                              contentPadding:
+                                  const EdgeInsets.only(top: 10, bottom: 10)),
                         ),
                       ),
                     ),
@@ -322,23 +342,21 @@ class _IndividualPageState extends State<IndividualPage> {
                           onPressed: () async {
                             if (sendButton) {
                               _scrollController.animateTo(
-                                  _scrollController
-                                      .position.maxScrollExtent,
-                                  duration:
-                                      const Duration(milliseconds: 300),
+                                  _scrollController.position.maxScrollExtent,
+                                  duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeOut);
                               sendMessage(
                                   _controller.text,
                                   Provider.of<UserProvider>(context,
                                           listen: false)
-                                      .faculty
+                                      .student
                                       .email,
-                                  widget.student.email);
+                                  widget.faculty.email);
                               await DB().getMessage(
-                                  widget.student.email,
+                                  widget.faculty.email,
                                   Provider.of<UserProvider>(context,
                                           listen: false)
-                                      .faculty
+                                      .student
                                       .email);
                               _controller.clear();
                               setState(() {

@@ -14,7 +14,9 @@ import 'package:proctor/pages/login_page.dart';
 import 'package:proctor/pages/faculty_register_page.dart';
 import 'package:proctor/pages/student_register_page.dart';
 import 'package:proctor/providers/user_provider.dart';
+import 'package:proctor/services/db.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -25,9 +27,11 @@ class SplashPage extends StatefulWidget {
 
 class _SplashPageState extends State<SplashPage> {
   bool isloading = true;
+  late DB db;
 
   @override
   void initState() {
+    db = DB();
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       validateStudent();
@@ -36,34 +40,79 @@ class _SplashPageState extends State<SplashPage> {
 
   void validateStudent() async {
     try {
-      var signedIn = await google.isSignedIn();
-      if (signedIn) {
+      //var signedIn = await google.isSignedIn();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (prefs.getString("user")?.isNotEmpty ?? false) {
+        debugPrint("Not null");
+        if (prefs.getString("user") == "student") {
+          debugPrint("Student");
+          Student? student = await db.getStudent();
+          if (student != null) {
+            debugPrint(student.toMap().toString());
+            Provider.of<UserProvider>(navigationKey.currentContext!,
+                    listen: false)
+                .addStudent(student);
+          }
+        } else if (prefs.getString("user") == "faculty") {
+          debugPrint("faculty");
+          Faculty? faculty = await db.getFaculty();
+          if (faculty != null) {
+            //debugPrint(jsonDecode(res.body).toString());
+            debugPrint(faculty.toMap().toString());
+            Provider.of<UserProvider>(navigationKey.currentContext!,
+                    listen: false)
+                .setFaculty();
+            Provider.of<UserProvider>(navigationKey.currentContext!,
+                    listen: false)
+                .addFaculty(faculty);
+          }
+        } else if (prefs.getString("user") == "admin") {
+          debugPrint("admin");
+          Faculty? faculty = await db.getFaculty();
+          if (faculty != null) {
+            //debugPrint(jsonDecode(res.body).toString());
+            debugPrint(faculty.toMap().toString());
+            Provider.of<UserProvider>(navigationKey.currentContext!,
+                    listen: false)
+                .setAdmin();
+            Provider.of<UserProvider>(navigationKey.currentContext!,
+                    listen: false)
+                .setFaculty();
+            Provider.of<UserProvider>(navigationKey.currentContext!,
+                    listen: false)
+                .addFaculty(faculty);
+          }
+        }
+      }
+      /*if (prefs.getString("user")!.isNotEmpty) {
         GoogleSignInAccount? user = await google.signInSilently();
         if (user != null) {
-          Response res = await get(Uri.parse(
-            '$url/checkUser?email=${user.email}',
-          ));
+          Response res = await get(Uri.parse('$url/checkUser?email=${user.email}',));
           if (res.statusCode == 200) {
-            if (user.email.contains("student.tce.edu")) {
+            if (prefs.getString("user")! == "student") {
               try {
-                Response res = await get(
-                    Uri.parse('$url/checkStudent?email=${user.email}'));
-                if (res.statusCode == 200) {
+                //Response res = await get(Uri.parse('$url/checkStudent?email=${user.email}'));
+                    debugPrint("Test");
+                Student? student = await db.getData();
+                if (student != null) {
                   debugPrint(jsonDecode(res.body).toString());
+                  debugPrint(student.toMap().toString());
                   Provider.of<UserProvider>(navigationKey.currentContext!,
                           listen: false)
-                      .addStudent(Student.fromMap(jsonDecode(res.body)));
-                } else if (res.statusCode == 400) {
+                      .addStudent(student);
+                }
+                /*else if (res.statusCode == 400) {
                   debugPrint("Success");
                   Provider.of<UserProvider>(navigationKey.currentContext!,
                           listen: false)
+
                       .addStudent(Student(
                           name: user.displayName ?? "",
                           email: user.email,
                           phone: "",
                           regnum: "",
                           faculty: Faculty(name: "", email: "", phone: "")));
-                } else {
+                } */else {
                   SnackBarGlobal.show("Error occured while validating student");
                 }
               } catch (e) {
@@ -112,7 +161,7 @@ class _SplashPageState extends State<SplashPage> {
                       ));
                     } else {
                       SnackBarGlobal.show(
-                          "Error occured while validating student");
+                          "Error occured while validating faculty");
                     }
                   } catch (e) {
                     debugPrint(e.toString());
@@ -143,38 +192,29 @@ class _SplashPageState extends State<SplashPage> {
             await google.signOut();
           }
         }
-      }
+      }*/
       setState(() {
         isloading = false;
       });
     } catch (e) {
-      debugPrint("Error");
+      debugPrint("Error ${e.toString()}");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return isloading
-        ? Scaffold(
+        ? const Scaffold(
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.person_pin_rounded,
                     size: 165,
                     color: kPrimaryColor,
                   ),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.15,
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.8,
-                    child: const LinearProgressIndicator(
-                      minHeight: 10,
-                      color: kPrimaryColor,
-                    ),
-                  )
+                  
                 ],
               ),
             ),

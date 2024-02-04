@@ -3,7 +3,6 @@ import 'package:proctor/main.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
-
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
 
@@ -153,6 +152,8 @@ class _ChatPageState extends State<ChatPage> {
     height = MediaQuery.of(context).size.height;
     width = MediaQuery.of(context).size.width;
     return Scaffold(
+      floatingActionButton: FloatingActionButton(onPressed: (){
+      }),
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[

@@ -6,7 +6,6 @@ import 'package:proctor/main.dart';
 import 'package:proctor/pages/faculty_attendance.dart';
 import 'package:proctor/pages/faculty_search_page.dart';
 import 'package:proctor/pages/faculty_students.dart';
-import 'package:proctor/pages/notification_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,7 +28,7 @@ class _ProfilePageState extends State<FHomePage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           bottom: isloading
@@ -50,16 +49,7 @@ class _ProfilePageState extends State<FHomePage> {
                     ),
                     Tab(
                       child: Text(
-                        "Search",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14),
-                      ),
-                    ),
-                    Tab(
-                      child: Text(
-                        "Attendance",
+                        "Classes",
                         style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -190,32 +180,57 @@ class _ProfilePageState extends State<FHomePage> {
             isloading || issearch
                 ? const SizedBox()
                 : IconButton(
-                    onPressed: () async {
-                      setState(() {
-                        isloading = true;
-                      });
-                      await google.signOut();
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      String? t = prefs.getString('token');
-                      if (t != null && t.isNotEmpty) {
-                        Response res =
-                            await get(Uri.parse('$url/removetoken?token=$t'));
-                        if (res.statusCode == 200) {
-                          debugPrint("Success");
-                        } else {
-                          debugPrint("Error in removing token");
-                        }
-                      }
-                      setState(() {
-                        isloading = false;
-                      });
-                      Provider.of<UserProvider>(navigationKey.currentContext!,
-                              listen: false)
-                          .removeStudent();
+                    onPressed: () {
+                      showDialog(
+                          context: context,
+                          builder: (_) {
+                            return AlertDialog(
+                              title: const Text("Logging Out"),
+                              content: const Text(
+                                  "Your chats data will be deleted. Are you sure ?"),
+                              actions: [
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      Navigator.pop(context);
+                                      setState(() {
+                                        isloading = true;
+                                      });
+                                      await google.signOut();
+                                      SharedPreferences prefs =
+                                          await SharedPreferences.getInstance();
+                                      String? t = prefs.getString('token');
+                                      if (t != null && t.isNotEmpty) {
+                                        Response res = await get(Uri.parse(
+                                            '$url/removetoken?token=$t'));
+                                        if (res.statusCode == 200) {
+                                          debugPrint("Success");
+                                        } else {
+                                          debugPrint("Error in removing token");
+                                        }
+                                      }
+                                      setState(() {
+                                        isloading = false;
+                                      });
+                                      Provider.of<UserProvider>(
+                                              navigationKey.currentContext!,
+                                              listen: false)
+                                          .removeStudent();
+                                    },
+                                    child: const Text("Yes")),
+                                ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text("No"))
+                              ],
+                            );
+                          });
                     },
-                    icon: const Icon(Icons.login_rounded,
-                        size: 30, color: Colors.white)),
+                    icon: const Icon(
+                      Icons.login_rounded,
+                      size: 30,
+                      color: Colors.white
+                    )),
             const SizedBox(
               width: 15,
             )
@@ -233,11 +248,6 @@ class _ProfilePageState extends State<FHomePage> {
             : TabBarView(
                 children: [
                   FacultyStudentPage(
-                    searchcontroller: _searchcontroller,
-                    search: search,
-                    selectedFilter: selectedFilter,
-                  ),
-                  FacultyPage(
                     searchcontroller: _searchcontroller,
                     search: search,
                     selectedFilter: selectedFilter,

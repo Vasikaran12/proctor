@@ -14,21 +14,88 @@ app.use(cors());
 
 const socketio = require('socket.io')(http)
 
-var clients = {};
+var clients = new Map();
 
 socketio.on("connection", (socket) => {
   console.log("connetetd");
   console.log(socket.id, "has joined");
-  socket.on("signin", (id) => {
+  socket.on("signin", async (id) => {
     console.log(id);
-    clients[id] = socket;
-    console.log(clients);
+    clients[id] = await socket;
+    clients[id].on('disconnect', () => {
+        console.log('disconnected');
+        clients[id] = null;
+    console.log(clients[id])
+    });
   });
-  socket.on("message", (msg) => {
+
+    
+
+  socket.on("message", async (msg) => {
     console.log(msg);
     let targetId = msg.targetId;
-    if (clients[targetId]) clients[targetId].emit("message", msg);
-  });
+    console.log(clients[targetId])
+    if(clients[targetId]){
+    clients[targetId].emit("message", msg);
+    }else{
+        try{
+            const {sender, targetId, message} = msg;
+            console.log({sender, targetId, message});
+            pool.query(
+                `select COALESCE(s.name, f.name) as name, ses.token as token
+                 from session ses
+                 LEFT JOIN
+                 student s ON s.email = $1
+                 LEFT JOIN
+                 faculty f ON f.email = $1
+                 where ses.email = $2`, [sender, targetId], (err, results) => {
+                if (err) {
+                    console.log(err.message);
+                    
+                } else {
+                    console.log(results.rows);
+                    if (results.rows.length > 0) {
+                        var fcmsender = fcm();
+                            const send_message = {
+                                "message": {
+                                    "token": results.rows[0].token,
+                                    "data": {
+                                        "sender": sender,
+                                        "message": message
+                                    },
+                                    "notification": {
+                                        "body": message,
+                                        "title": `${results.rows[0].name}`,
+                                    },
+                                    "android": {
+                                        "notification": {
+                                            "channel_id": "pushnotification"
+                                        }
+                                    }
+                                }
+                            };
+                            try {
+                                fcmsender.getAccessToken().then(async () => {
+                                    await fcmsender.sendMessage(send_message);
+                                });
+                                //await sender.sendMessage(send_message);
+                            } catch (e) {
+                                console.error(`Error for row : ${e.message}`);
+                            }
+                        
+                        console.log("Messages sent");
+                    } else {
+                        console.log({ message: "No Active receivers" });
+                    }
+                }
+            }
+            )   
+                }catch(e){
+                    console.log(e);
+                    res.sendStatus(500);
+                }
+    }
+  },);
 });
 
 const pool = new Pool({

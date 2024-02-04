@@ -1,13 +1,15 @@
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:proctor/constants/auth_constants.dart';
 import 'package:proctor/constants/color.dart';
 import 'package:proctor/firebase_options.dart';
-import 'package:proctor/pages/notification_page.dart';
+import 'package:proctor/models/message_model.dart';
 import 'package:proctor/pages/splash_page.dart';
 import 'package:proctor/providers/user_provider.dart';
 import 'package:proctor/services.dart/local_notification.dart';
+import 'package:proctor/services/db.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -47,12 +49,23 @@ void main() async {
     debugPrint("Called instance");
     if (msg != null) {
       try {
-        await Navigator.push(navigationKey.currentContext!,
-            MaterialPageRoute(builder: (_) => const NotifyPage()));
-        if (await google.isSignedIn()) {
-          SnackBarGlobal.showNotification(
-              msg.notification!.title ?? "", msg.notification!.body ?? "");
-        }
+        debugPrint("hello${msg.data}");
+        Message messageModel = Message(
+            sender: msg.data['sender'] ?? '',
+            receiver: Provider.of<UserProvider>(navigationKey.currentContext!,
+                        listen: false)
+                    .isFaculty
+                ? Provider.of<UserProvider>(navigationKey.currentContext!,
+                        listen: false)
+                    .faculty
+                    .email
+                : Provider.of<UserProvider>(navigationKey.currentContext!,
+                        listen: false)
+                    .student
+                    .email,
+            message: msg.data['message'] ?? '',
+            time: DateTime.now().toString());
+        DB().insertMessage(messageModel);
       } catch (e) {
         debugPrint(e.toString());
       }
@@ -62,11 +75,25 @@ void main() async {
   FirebaseMessaging.onMessage.listen((msg) {
     debugPrint('listen message');
     try {
-      if (google.currentUser != null) {
-        SnackBarGlobal.showNotification(
-            msg.notification!.title ?? "", msg.notification!.body ?? "");
-      }
+      debugPrint("hello${msg.data}");
+      Message messageModel = Message(
+          sender: msg.data['sender'] ?? '',
+          receiver: Provider.of<UserProvider>(navigationKey.currentContext!,
+                      listen: false)
+                  .isFaculty
+              ? Provider.of<UserProvider>(navigationKey.currentContext!,
+                      listen: false)
+                  .faculty
+                  .email
+              : Provider.of<UserProvider>(navigationKey.currentContext!,
+                      listen: false)
+                  .student
+                  .email,
+          message: msg.data['message'] ?? '',
+          time: DateTime.now().toString());
+      DB().insertMessage(messageModel);
     } catch (e) {
+      debugPrint('error');
       debugPrint(e.toString());
     }
   });

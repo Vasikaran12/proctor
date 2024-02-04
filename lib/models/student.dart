@@ -17,6 +17,8 @@ class Student{
       'name': name,
       'phone': phone,
       'email': email,
+      'regnum': regnum,
+      'proctor': faculty.email
     };
   }
 

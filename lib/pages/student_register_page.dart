@@ -9,6 +9,7 @@ import 'package:proctor/main.dart';
 import 'package:proctor/models/faculty.dart';
 import 'package:proctor/models/student.dart';
 import 'package:proctor/providers/user_provider.dart';
+import 'package:proctor/services/db.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -339,6 +340,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         debugPrint("Error in saving token");
                                       }
                                     }
+                                    DB().insertStudent(Student.fromMap(jsonDecode(res.body)));
                                     Provider.of<UserProvider>(navigationKey.currentContext!, listen: false).addStudent(Student.fromMap(jsonDecode(res.body)));
                                   }else{
                                     SnackBarGlobal.show("Error while registering user");
